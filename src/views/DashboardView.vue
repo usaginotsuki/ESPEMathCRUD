@@ -83,13 +83,7 @@ export default {
         collection(db, 'contenido', doc.id, 'temas'),
       )
       let temas: any = []
-      /*unitContent.forEach((docTemas) => {
-        //console.log(docTemas.data())
-        temas.push(docTemas.data())
-        this.unidades[index].temas = temas
-        //push content into new array into unidades named temas
-        //this.unidades[index].push(docTemas.data())
-      })*/
+
       console.log(doc.id, ' => ', doc.data())
     })
     console.log(this.unidades)
