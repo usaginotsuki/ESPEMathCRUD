@@ -15,13 +15,8 @@
             <VCardText>
               {{ unitInfo.descriptionUnitBook }}
             </VCardText>
-            <VExpansionPanels
-              multiple
-              v-model="panel"
-              v-for="tema in unidades"
-              :key="tema.id"
-            >
-              <VExpansionPanel expandable>
+            <VExpansionPanels v-model="panel">
+              <VExpansionPanel v-for="tema in unidades" :key="tema.id">
                 <VExpansionPanelTitle>
                   {{ tema.titleSubject }}
                 </VExpansionPanelTitle>
@@ -54,7 +49,7 @@ const auth = getAuth()
 export default {
   data() {
     let unidades: any = []
-    let panel: number = 0
+    let panel: any
     let unitInfo: any = []
     return {
       unitInfo,
@@ -73,7 +68,8 @@ export default {
     this.unitInfo = docSnap.data()
     console.log(this.unitInfo)
     const unitQuery = query(
-      collection(db, 'contenido', id.toString(), 'temas'), orderBy('idSubject'),
+      collection(db, 'contenido', id.toString(), 'temas'),
+      orderBy('idSubject'),
       //orderBy('unidad'),
     )
 
