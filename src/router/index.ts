@@ -1,25 +1,57 @@
-import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import { createRouter, createWebHistory } from "vue-router";
+import LoginView from "../views/LoginView.vue";
+import { getAuth } from "firebase/auth";
 
-const routes: Array<RouteRecordRaw> = [
+const routes = [
   {
-    path: '/',
-    name: 'home',
-    component: HomeView
+    path: "/",
+    name: "login",
+    component: LoginView,
   },
   {
-    path: '/about',
-    name: 'about',
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
-  }
-]
+    path: "/register",
+    name: "register",
+    component: () =>
+      import(/* webpackChunkName: "about" */ "../views/RegisterView.vue"),
+  },
+  {
+    path: "/dashboard",
+    name: "dashboard",
+    component: () =>
+      import(/* webpackChunkName: "about" */ "../views/DashboardView.vue"),
+    meta: {
+      //authRequired: true,
+    },
+  },
+  {
+    path: "/unidad/:id",
+    props: { default: true, sidebar: false },
+    component: () =>
+      import(/* webpackChunkName: "about" */ "../views/TopicView/[id].vue"),
+    meta: {
+      //authRequired: true,
+    },
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(process.env.BASE_URL),
-  routes
-})
+  routes,
+});
 
-export default router
+router.beforeEach((to, from, next) => {
+  const auth = getAuth();
+  console.log(auth.currentUser)
+  if (to.matched.some((record) => record.meta.authRequired)) {
+    if (auth.currentUser) {
+      next();
+    } else {
+      alert("You've must been logged to access this area");
+      router.push("/");
+    }
+  } else {
+    next();
+  }
+});
+
+export default router;
