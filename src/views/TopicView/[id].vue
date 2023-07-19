@@ -1,6 +1,7 @@
 <template>
   <div>
     <VContainer :fluid="true">
+      {{ loading }}1
       <VRow>
         <VCol>
           <VCard
@@ -9,6 +10,7 @@
             style="text-align: center;"
             class="mx-auto my-12"
           >
+            {{ loading }}
             <VCardTitle
               style="
                 padding-top: 5%;
@@ -23,10 +25,17 @@
             <VCardText>
               {{ unitInfo.descriptionUnitBook }}
             </VCardText>
-            <VExpansionPanels v-model="panel" if v-if="loading == false">
+            <VExpansionPanels>
               <VExpansionPanel v-for="tema in unidades" :key="tema.id">
                 <VExpansionPanelTitle>
-                  {{ tema.titleSubject }}
+                  <VRow>
+                    <VCol>{{ tema.idSubject }} {{ tema.titleSubject }}</VCol>
+                    <VCol md="2" class="text-right">
+                      <VBtn @click="editTopic(tema)">
+                        Editar
+                      </VBtn>
+                    </VCol>
+                  </VRow>
                 </VExpansionPanelTitle>
                 <VExpansionPanelText>
                   {{ tema.descriptionSubject }}
@@ -46,7 +55,7 @@
                 </VBtn>
               </span>
             </VExpansionPanels>
-            <div v-else>
+            <div v-show="loading">
               <center>
                 <VRow>
                   <VCol>
@@ -74,7 +83,7 @@
         <center>
           <VCard color="primary">
             <VCardTitle style="color: white;" color="primary" class="headline">
-              Editar usuario
+              Crear nuevo tema
             </VCardTitle>
           </VCard>
         </center>
@@ -119,12 +128,100 @@
       </VCard>
     </VDialog>
   </div>
+  <div class="text-xs-center">
+    <VDialog v-model="editContent" persistent="true" width="1000">
+      <VCard>
+        <center>
+          <VCard color="primary">
+            <VCardTitle style="color: white;" color="primary" class="headline">
+              Editar contenido
+            </VCardTitle>
+          </VCard>
+        </center>
+        <VCardText>
+          <VRow>
+            <VCol md="2">
+              <VCardTitle><b>Titulo:</b></VCardTitle>
+            </VCol>
+            <VCol>
+              <VTextField
+                v-model="currentEditing.titleSubject"
+                label="Titulo"
+                required
+              ></VTextField>
+            </VCol>
+          </VRow>
+          <VRow>
+            <VCol md="2">
+              <VCardTitle><b>Contenido:</b></VCardTitle>
+            </VCol>
+            <VCol>
+              <VTextarea
+                v-model="currentEditing.descriptionSubject"
+                required
+                rows="10"
+              ></VTextarea>
+            </VCol>
+          </VRow>
+          <VRow v-for="topic in currentEditing.topic" :key="topic.id">
+            <VCol md="9">
+              <VImg
+                :src="topic.urlImageTopic"
+                style="width: max-contents;"
+              ></VImg>
+            </VCol>
+            <VCol style="padding-top: 20%;">
+              <VBtn color="red" @click="deleteTopic(topic.idTopic)">
+                Eliminar imagen
+              </VBtn>
+            </VCol>
+          </VRow>
+          <VBtn color="primary" width="100%" @click="addImage()">
+            Agregar imagen
+          </VBtn>
+          <br />
+        </VCardText>
+        <br />
+
+        <VCardActions style="margin-left: 72%;">
+          <br />
+
+          <VBtn
+            variant="elevated"
+            color="success"
+            class="me-3"
+            @click="saveEdit()"
+          >
+            Guardar
+          </VBtn>
+          <VBtn
+            variant="elevated"
+            color="red"
+            class="me-3"
+            @click="closeContent()"
+          >
+            Cancelar
+          </VBtn>
+        </VCardActions>
+      </VCard>
+    </VDialog>
+    <VFileInput
+      ref="file"
+      v-show="false"
+      accept=".jpg, .jpeg, .png"
+      state="Boolean(file)"
+      label="Añadir anexos..."
+      @change="uploadImage"
+    ></VFileInput>
+  </div>
 </template>
 
 <script lang="ts">
-import { getAuth } from 'firebase/auth'/*
+import { getAuth } from 'firebase/auth'
 import { toast } from 'vue3-toastify'
-import 'vue3-toastify/dist/index.css'*/
+import 'vue3-toastify/dist/index.css'
+import axios from 'axios'
+//const { Configuration, OpenAIApi } = require("openai");
 import {
   getFirestore,
   collection,
@@ -136,13 +233,14 @@ import {
   orderBy,
   setDoc,
   addDoc,
+  deleteDoc,
 } from 'firebase/firestore/lite'
+import { load } from 'webfontloader'
 
-const auth = getAuth()
 export default {
   data() {
     let unidades: any = []
-    let panel: any
+    let panel: any[] = []
     let unitInfo: any = []
     let loading: boolean = true
     let newContent = false
@@ -152,6 +250,8 @@ export default {
       idSubject: 0,
       topic: [],
     }
+    let editContent = false
+    let currentEditing: any
     return {
       unitInfo,
       panel,
@@ -159,78 +259,217 @@ export default {
       loading,
       newContent,
       newTema,
+      currentEditing,
+      editContent,
     }
   },
   methods: {
+    async getData() {
+      this.loading = true
+
+      console.log('created')
+      let id = this.$route.params.id
+      console.log(id)
+      const db = getFirestore()
+      //get only info from contenido with id
+      const docRef = doc(db, 'contenido', id.toString())
+      const docSnap = await getDoc(docRef)
+      this.unitInfo = docSnap.data()
+      console.log(this.unitInfo)
+
+      const unitQuery = query(
+        collection(db, 'contenido', id.toString(), 'temas'),
+        orderBy('idSubject'),
+        //orderBy('unidad'),
+      )
+      let index = 0
+
+      //order by id
+      let unitContent = await getDocs(unitQuery)
+      let temas: any = []
+
+      unitContent.forEach(async (docTemas) => {
+        let topicQuery = query(
+          collection(
+            db,
+            'contenido',
+            id.toString(),
+            'temas',
+            docTemas.id,
+            'topic',
+          ),
+          //orderBy('idSubject', 'asc'),
+        )
+        let topicContent = await getDocs(topicQuery)
+
+        temas.push(docTemas.data())
+        temas[index].id = docTemas.id
+        temas[index].topic = []
+
+        topicContent.forEach(async (docTopic) => {
+          temas[index].topic.push(docTopic.data())
+          temas[index].topic[temas[index].topic.length - 1].idTopic =
+            docTopic.id
+        })
+        index++
+      })
+      console.log(index, '2')
+      //order temas by idSubject
+      temas.sort((a: any, b: any) => {
+        return a.idSubject - b.idSubject
+      })
+      this.unidades = temas
+      this.loading = false
+      this.$forceUpdate()
+
+      console.log('Unidades', this.unidades)
+      return true
+    },
     closeContent() {
+      this.editContent = false
       this.newContent = false
     },
     async saveContent() {
+      let toast2 = toast.loading(
+        'Actualizando la información, espere un segundo',
+        {
+          //autoClose: false,
+        },
+      )
+
       console.log(this.newTema)
       let id = this.$route.params.id
       let idSubject = this.unidades.length + 1
       const db = getFirestore()
-      const res = await addDoc(
-        collection(db, 'contenido', id.toString(), 'temas'),
+
+      toast.update(toast2, {
+        render: 'Contenido agregado con éxito',
+        type: 'success',
+        autoClose: 2000,
+        isLoading: false,
+        closeOnClick: true,
+      })
+      //reload page
+      this.getData()
+    },
+    async saveEdit() {
+      let toast2 = toast.loading(
+        'Actualizando la información, espere un segundo',
         {
-          descriptionSubject: this.newTema.descriptionSubject,
-          titleSubject: this.newTema.titleSubject,
-          idSubject: idSubject,
+          //autoClose: false,
         },
       )
+      console.log(this.currentEditing)
+      let id = this.$route.params.id
+      const db = getFirestore()
+      toast.update(toast2, {
+        render: 'Contenido agregado con éxito',
+        type: 'success',
+        autoClose: 2000,
+        isLoading: false,
+        closeOnClick: true,
+      })
       //reload page
-      window.location.reload()
+      this.getData()
+    },
+    async deleteTopic(id: any) {
+      console.log(id)
+      let toast2 = toast.loading(
+        'Actualizando la información, espere un segundo',
+        {
+          //autoClose: false,
+        },
+      )
+      console.log(this.currentEditing)
+      let idBook = this.$route.params.id
+      const db = getFirestore()
+      try {
+        await deleteDoc(
+          doc(
+            db,
+            'contenido',
+            idBook.toString(),
+            'temas',
+            this.currentEditing.id,
+            'topic',
+            id,
+          ),
+        )
+        toast.update(toast2, {
+          render: 'Imagen eliminada con exito',
+          type: 'success',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+        this.currentEditing.topic = this.currentEditing.topic.filter(
+          (topic: any) => topic.idTopic != id,
+        )
+
+        this.getData()
+      } catch (error) {
+        toast.update(toast2, {
+          render: 'Error al eliminar la imagen',
+          type: 'error',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+      }
+    },
+
+    async editTopic(tema: any) {
+      console.log(tema)
+      this.editContent = true
+      this.currentEditing = tema
+    },
+    async addImage() {
+      let fileInputElement: any = this.$refs.file
+      fileInputElement.click()
+    },
+    async uploadImage(e: any) {
+      const image = e.target.files ? e.target.files[0] : null
+      if (image) {
+        const formData = new FormData()
+        formData.append('file', image)
+        formData.append('upload_preset', 'hsvfa23f')
+        try {
+          axios
+            .post('https://api.cloudinary.com/v1_1/dmx1v3oeu/upload', formData)
+            .then(async (res: { data: { secure_url: any } }) => {
+              console.log(res.data)
+              let toast2 = toast.loading(
+                'Actualizando la información, espere un segundo',
+              )
+              let id = this.$route.params.id
+              const db = getFirestore()
+              this.unidades.forEach((tema: any) => {
+                if (tema.id == this.currentEditing.id) {
+                  tema.topic.push({
+                    urlImageTopic: res.data.secure_url,
+                    idTopic: this.currentEditing.topic.length + 1,
+                  })
+                }
+              })
+              toast.update(toast2, {
+                render: 'Imagen agregada con exito',
+                type: 'success',
+                autoClose: 2000,
+                isLoading: false,
+                closeOnClick: true,
+              })
+              //reload page
+              this.getData()
+            })
+        } catch (error) {
+          console.log(error)
+        }
+      }
     },
   },
-  async created() {
-    console.log('created')
-    let id = this.$route.params.id
-    console.log(id)
-    const db = getFirestore()
-    //get only info from contenido with id
-    const docRef = doc(db, 'contenido', id.toString())
-    const docSnap = await getDoc(docRef)
-    this.unitInfo = docSnap.data()
-    console.log(this.unitInfo)
-
-    const unitQuery = query(
-      collection(db, 'contenido', id.toString(), 'temas'),
-      orderBy('idSubject'),
-      //orderBy('unidad'),
-    )
-    let index = 0
-
-    //order by id
-    let unitContent = await getDocs(unitQuery)
-    let temas: any = []
-
-    unitContent.forEach(async (docTemas) => {
-      let topicQuery = query(
-        collection(
-          db,
-          'contenido',
-          id.toString(),
-          'temas',
-          docTemas.id,
-          'topic',
-        ),
-        orderBy('idTopic'),
-      )
-      let topicContent = await getDocs(topicQuery)
-
-      temas.push(docTemas.data())
-      temas[index].id = docTemas.id
-      temas[index].topic = []
-
-      topicContent.forEach((docTopic) => {
-        console.log(docTopic.data())
-        temas[index].topic.push(docTopic.data())
-      })
-      index++
-    })
-    this.unidades = await temas
-    this.loading = false
-    console.log('Unidades', this.unidades)
+  async mounted() {
+    await this.getData()
+    return
   },
 }
 </script>

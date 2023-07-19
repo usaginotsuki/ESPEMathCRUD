@@ -5,7 +5,7 @@
         <VCol>
           <div v-for="item in unidades" :key="item.id">
             <VCard
-              width="500"
+              width="100%"
               outlined="true"
               @click="verUnidad(item)"
               style="text-align: center;"

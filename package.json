@@ -8,12 +8,17 @@
     "dev": "vite"
   },
   "dependencies": {
+    "@cloudinary/url-gen": "^1.10.2",
+    "@cloudinary/vue": "^1.11.2",
     "@mdi/font": "5.9.55",
+    "axios": "^1.4.0",
+    "cloudinary": "^1.37.3",
     "firebase": "^9.23.0",
     "roboto-fontface": "*",
     "vue": "^3.2.13",
     "vue-class-component": "^8.0.0-0",
     "vue-router": "^4.0.3",
+    "vue3-toastify": "^0.1.11",
     "vuetify": "npm:@vuetify/nightly@next",
     "vuex": "^4.0.0",
     "webfontloader": "^1.0.0"
