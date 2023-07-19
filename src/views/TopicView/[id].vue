@@ -1,7 +1,7 @@
 <template>
   <div>
     <VContainer :fluid="true">
-      {{ loading }}1
+      <br />
       <VRow>
         <VCol>
           <VCard
@@ -10,7 +10,6 @@
             style="text-align: center;"
             class="mx-auto my-12"
           >
-            {{ loading }}
             <VCardTitle
               style="
                 padding-top: 5%;
@@ -279,7 +278,7 @@ export default {
 
       const unitQuery = query(
         collection(db, 'contenido', id.toString(), 'temas'),
-        orderBy('idSubject'),
+        orderBy('idSubject', 'asc'),
         //orderBy('unidad'),
       )
       let index = 0
@@ -288,6 +287,32 @@ export default {
       let unitContent = await getDocs(unitQuery)
       let temas: any = []
 
+      for(let i = 0; i < unitContent.docs.length; i++){
+        let docTemas = unitContent.docs[i]
+        let topicQuery = query(
+          collection(
+            db,
+            'contenido',
+            id.toString(),
+            'temas',
+            docTemas.id,
+            'topic',
+          ),
+        )
+        let topicContent = await getDocs(topicQuery)
+        console.log(topicContent.docs)
+        temas.push(docTemas.data())
+        temas[index].topic = []
+        temas[index].id = docTemas.id
+
+        for(let j = 0; j < topicContent.docs.length; j++){
+          let docTopic = topicContent.docs[j]
+          temas[index].topic.push(docTopic.data())
+          temas[index].topic[temas[index].topic.length - 1].idTopic =
+            docTopic.id
+        }
+        index++
+      }
       unitContent.forEach(async (docTemas) => {
         let topicQuery = query(
           collection(
@@ -298,7 +323,7 @@ export default {
             docTemas.id,
             'topic',
           ),
-          //orderBy('idSubject', 'asc'),
+          orderBy('idSubject', 'asc'),
         )
         let topicContent = await getDocs(topicQuery)
 
@@ -306,7 +331,7 @@ export default {
         temas[index].id = docTemas.id
         temas[index].topic = []
 
-        topicContent.forEach(async (docTopic) => {
+        await topicContent.forEach(async (docTopic) => {
           temas[index].topic.push(docTopic.data())
           temas[index].topic[temas[index].topic.length - 1].idTopic =
             docTopic.id
@@ -315,15 +340,11 @@ export default {
       })
       console.log(index, '2')
       //order temas by idSubject
-      temas.sort((a: any, b: any) => {
+      await temas.sort((a: any, b: any) => {
         return a.idSubject - b.idSubject
       })
       this.unidades = temas
       this.loading = false
-      this.$forceUpdate()
-
-      console.log('Unidades', this.unidades)
-      return true
     },
     closeContent() {
       this.editContent = false
