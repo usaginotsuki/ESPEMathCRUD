@@ -133,16 +133,14 @@
                 </VCardTitle>
               </VCard>
             </center>
-            <VExpansionPanels  multiple v-if="unidades.length > 0">
+            <VExpansionPanels multiple v-if="unidades.length > 0">
               <VExpansionPanel
                 v-for="(pregunta, index) in questions"
                 :key="pregunta.id"
               >
                 <VExpansionPanelTitle>
                   <VRow>
-                    <VCol >
-                      {{ index + 1 }} - {{ pregunta.nameQuestion }}
-                    </VCol>
+                    <VCol>{{ index + 1 }} - {{ pregunta.nameQuestion }}</VCol>
                     <VCol md="2" class="text-right">
                       <VBtn @click="editQuestion(pregunta)">
                         Editar
@@ -176,7 +174,7 @@
                       :key="respuesta.index"
                     >
                       <VTextField
-                        readonly=""
+                        readonly
                         v-model="respuesta.answerOption"
                       ></VTextField>
                     </VCol>
@@ -368,13 +366,13 @@
         <center>
           <VCard color="primary">
             <VCardTitle style="color: white;" color="primary" class="headline">
-              Editar contenido
+              Editar pregunta
             </VCardTitle>
           </VCard>
         </center>
         <VCardText>
           <VRow>
-            <VCol md="2">
+            <VCol md="3">
               <VCardTitle><b>Titulo:</b></VCardTitle>
             </VCol>
             <VCol>
@@ -386,40 +384,99 @@
             </VCol>
           </VRow>
           <VRow v-if="currentEditing.urlImage">
-            <VCol md="9">
-              <VImg
-                :src="currentEditing.urlImage"
-                style="width: max-contents;"
-              ></VImg>
+            <VCol md="10" style="text-align: right;">
+              <center>
+                <VImg :src="currentEditing.urlImage" style="width: 70%;"></VImg>
+              </center>
             </VCol>
-            <VCol style="padding-top: 20%;">
+            <VCol style="margin-top: 20%; text-align: left;">
               <VBtn color="red" @click="deleteImageQuestion(currentEditing.id)">
-                Eliminar imagen
+                <VIcon>mdi-delete</VIcon>
               </VBtn>
-            </VCol>
-          </VRow>
-          <VRow>
-            <VCol
-              v-for="option in currentEditing.option"
-              :key="option.idOption"
-            >
-              <VTextField
-                v-model="option.answerOption"
-                label="Respuesta"
-                required
-              ></VTextField>
             </VCol>
           </VRow>
           <VBtn
             v-if="!currentEditing.urlImage"
             color="primary"
             width="100%"
-            @click="addImageTopic()"
+            @click="addImageQuestion()"
           >
             Agregar imagen
           </VBtn>
+          <VCardTitle style="padding-top: 5%;"><b>Respuestas:</b></VCardTitle>
+          <VRow>
+            <VCol>
+              <VSelect
+                :items="closedOpenLeft"
+                item-title="name"
+                item-value="value"
+                v-model="currentEditing.option[0].answerOption"
+              ></VSelect>
+            </VCol>
+            <VCol>
+              <VTextField
+                type="number"
+                v-model="currentEditing.option[1].answerOption"
+              ></VTextField>
+            </VCol>
+            <VCol>
+              <VTextField
+                type="number"
+                v-model="currentEditing.option[2].answerOption"
+              ></VTextField>
+            </VCol>
+            <VCol>
+              <VSelect
+                :items="closedOpenRight"
+                item-title="name"
+                item-value="value"
+                v-model="currentEditing.option[3].answerOption"
+              ></VSelect>
+            </VCol>
+          </VRow>
+          <VRow>
+            <VCol md="3">
+              <VCardTitle><b>Retroalimentación:</b></VCardTitle>
+            </VCol>
+            <VCol>
+              <VTextarea
+                v-model="currentEditing.feedBackQuestion"
+                label="Titulo"
+                required
+              ></VTextarea>
+            </VCol>
+          </VRow>
+
           <br />
         </VCardText>
+        <VCardActions>
+          <VRow>
+            <VCol cols="2">
+              <VBtn variant="elevated" color="red" @click="">
+                Eliminar
+                <VIcon>mdi-delete</VIcon>
+              </VBtn>
+            </VCol>
+
+            <VCol offset="6" style="margin-right: 0px; padding-right: 0px;">
+              <VBtn variant="elevated" color="success" class="me-3" @click="">
+                Guardar
+                <VIcon>mdi-content-save</VIcon>
+              </VBtn>
+
+              <VBtn
+                variant="elevated"
+                color="red"
+                class="me-3"
+                @click="closeContent()"
+              >
+                Cancelar
+                <VIcon>mdi-close</VIcon>
+              </VBtn>
+            </VCol>
+          </VRow>
+          <br />
+        </VCardActions>
       </VCard>
     </VDialog>
     <VFileInput
@@ -428,7 +485,7 @@
       accept=".jpg, .jpeg, .png"
       state="Boolean(file)"
       label="Añadir anexos..."
-      @change="uploadImageContent"
+      @change="uploadImageQuestion"
     ></VFileInput>
   </div>
 </template>
@@ -497,6 +554,14 @@ export default {
     let newQuestion = false
     let editarTitulo = false
     let editTituloText: any = ''
+    let closedOpenLeft = [
+      { name: '[', value: 'closedAngle' },
+      { name: '(', value: 'openAngle' },
+    ]
+    let closedOpenRight = [
+      { name: ']', value: 'closedAngle' },
+      { name: ')', value: 'openAngle' },
+    ]
     return {
       unitInfo,
       panel,
@@ -512,6 +577,8 @@ export default {
       newQuestion,
       editarTitulo,
       editTituloText,
+      closedOpenLeft,
+      closedOpenRight,
     }
   },
   methods: {
@@ -855,21 +922,30 @@ export default {
       const db = getFirestore()
       try {
         console.log('BORRAR IMAGEN')
-        await setDoc(doc(db, 'contenido', idBook.toString(), 'preguntas', id), {
-          feedBackQuestion: this.currentEditing.feedBackQuestion,
-          idQuestion: this.currentEditing.idQuestion,
-          titleQuestion: this.currentEditing.titleQuestion,
-          urlImageOrVideoQuestion: '',
-        }).then(() => {
-          toast.update(toast2, {
-            render: 'Imagen eliminada con exito',
-            type: 'success',
-            autoClose: 2000,
-            isLoading: false,
-            closeOnClick: true,
-          })
-          this.currentEditing.urlImage = ''
+        await updateDoc(
+          doc(
+            db,
+            'contenido',
+            idBook.toString(),
+            'preguntas',
+            this.currentEditing.id,
+          ),
+          {
+            urlImageOrVideoQuestion: '',
+          },
+        )
+        this.currentEditing.urlImage = ''
+        toast.update(toast2, {
+          render: 'Imagen eliminada con exito',
+          type: 'success',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
         })
+        let index = this.questions.findIndex(
+          (pregunta: any) => pregunta.id == this.currentEditing.id,
+        )
+        this.questions[index].urlImage = ''
       } catch (error) {
         toast.update(toast2, {
           render: 'Error al eliminar la imagen',
@@ -903,7 +979,7 @@ export default {
             const db = getFirestore()
             console.log('ADD')
             try {
-              await setDoc(
+              await updateDoc(
                 doc(
                   db,
                   'contenido',
@@ -912,9 +988,6 @@ export default {
                   this.currentEditing.id,
                 ),
                 {
-                  feedBackQuestion: this.currentEditing.feedBackQuestion,
-                  idQuestion: this.currentEditing.idQuestion,
-                  titleQuestion: this.currentEditing.titleQuestion,
                   urlImageOrVideoQuestion: '[image]' + res.data.secure_url,
                 },
               )
@@ -925,8 +998,13 @@ export default {
                 isLoading: false,
                 closeOnClick: true,
               })
+              let index = this.questions.findIndex(
+                (pregunta: any) => pregunta.id == this.currentEditing.id,
+              )
+              this.questions[index].urlImage = res.data.secure_url
             } catch (error) {
               console.log('ERROR AL SUBIR')
+              console.log(error)
               toast.error('Error al subir la imagen')
             }
           })
