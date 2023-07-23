@@ -133,17 +133,17 @@
                 </VCardTitle>
               </VCard>
             </center>
-            <VExpansionPanels v-if="unidades.length > 0">
+            <VExpansionPanels  multiple v-if="unidades.length > 0">
               <VExpansionPanel
                 v-for="(pregunta, index) in questions"
                 :key="pregunta.id"
               >
                 <VExpansionPanelTitle>
                   <VRow>
-                    <VCol cols="8">
+                    <VCol >
                       {{ index + 1 }} - {{ pregunta.nameQuestion }}
                     </VCol>
-                    <VCol md="1" class="text-right">
+                    <VCol md="2" class="text-right">
                       <VBtn @click="editQuestion(pregunta)">
                         Editar
                       </VBtn>
@@ -363,7 +363,7 @@
     ></VFileInput>
   </div>
   <div class="text-xs-center">
-    <VDialog v-model="editQuestionModal" persistent="true" width="1000">
+    <VDialog v-model="editQuestionModal" persistent width="1000">
       <VCard>
         <center>
           <VCard color="primary">
