@@ -21,14 +21,74 @@
             >
               <h1>{{ unitInfo.titleUnitBook }}</h1>
             </VCardTitle>
-            <VCardText>
-              {{ unitInfo.descriptionUnitBook }}
+            <VCardText v-if="!editarTitulo">
+              <VRow>
+                <VCol md="10">
+                  <h3>{{ unitInfo.descriptionUnitBook }}</h3>
+                </VCol>
+                <VCol>
+                  <VBtn
+                    color="primary"
+                    @click="editarTitulo = true"
+                    style="margin-top: 2%;"
+                  >
+                    Editar
+                  </VBtn>
+                </VCol>
+              </VRow>
             </VCardText>
-            <VExpansionPanels>
-              <VExpansionPanel v-for="tema in unidades" :key="tema.id">
+            <VCardText v-if="editarTitulo">
+              <VRow>
+                <VCol md="10">
+                  <VTextarea v-model="editTituloText" required></VTextarea>
+                </VCol>
+                <VCol>
+                  <VRow>
+                    <VCol>
+                      <VBtn
+                        color="primary"
+                        @click="cambiarTitulo()"
+                        style="margin-top: 2%;"
+                      >
+                        Guardar
+                      </VBtn>
+                    </VCol>
+                  </VRow>
+                  <VRow>
+                    <VCol>
+                      <VBtn
+                        color="red"
+                        @click="cancelarCambiarTitulo()"
+                        style="margin-top: 2%;"
+                      >
+                        Cancelar
+                      </VBtn>
+                    </VCol>
+                  </VRow>
+                </VCol>
+              </VRow>
+            </VCardText>
+            <center v-if="unidades.length > 0">
+              <VCard color="primary">
+                <VCardTitle
+                  style="
+                    color: white;
+                    height: 3.125rem;
+                    align-items: center;
+                    display: flex;
+                  "
+                  color="primary"
+                  class="text-left justify center"
+                >
+                  Contenido
+                </VCardTitle>
+              </VCard>
+            </center>
+            <VExpansionPanels v-if="unidades.length > 0">
+              <VExpansionPanel v-for="(tema, index) in unidades" :key="tema.id">
                 <VExpansionPanelTitle>
                   <VRow>
-                    <VCol>{{ tema.idSubject }} {{ tema.titleSubject }}</VCol>
+                    <VCol>{{ index + 1 }} - {{ tema.titleSubject }}</VCol>
                     <VCol md="2" class="text-right">
                       <VBtn @click="editTopic(tema)">
                         Editar
@@ -39,7 +99,9 @@
                 <VExpansionPanelText>
                   {{ tema.descriptionSubject }}
                   <div v-for="topic in tema.topic" :key="topic.id">
-                    <VImg :src="topic.urlImageTopic"></VImg>
+                    <center>
+                      <VImg width="60%" :src="topic.urlImageTopic"></VImg>
+                    </center>
                   </div>
                 </VExpansionPanelText>
               </VExpansionPanel>
@@ -53,6 +115,74 @@
                   Agregar nuevo contenido
                 </VBtn>
               </span>
+              <br />
+            </VExpansionPanels>
+            <center v-if="unidades.length > 0">
+              <VCard color="primary">
+                <VCardTitle
+                  style="
+                    color: white;
+                    height: 3.125rem;
+                    align-items: center;
+                    display: flex;
+                  "
+                  color="primary"
+                  class="text-left justify center"
+                >
+                  Preguntas
+                </VCardTitle>
+              </VCard>
+            </center>
+            <VExpansionPanels v-if="unidades.length > 0">
+              <VExpansionPanel
+                v-for="(pregunta, index) in questions"
+                :key="pregunta.id"
+              >
+                <VExpansionPanelTitle>
+                  <VRow>
+                    <VCol cols="8">
+                      {{ index + 1 }} - {{ pregunta.nameQuestion }}
+                    </VCol>
+                    <VCol md="1" class="text-right">
+                      <VBtn @click="editQuestion(pregunta)">
+                        Editar
+                      </VBtn>
+                    </VCol>
+                  </VRow>
+                </VExpansionPanelTitle>
+                <VExpansionPanelText>
+                  <p>
+                    {{ pregunta.titleQuestion }}
+                  </p>
+                  <br />
+                  <VRow v-if="pregunta.urlImage">
+                    <VCol>
+                      <VImg :src="pregunta.urlImage"></VImg>
+                    </VCol>
+                  </VRow>
+                  <VRow v-if="pregunta.urlVideo">
+                    <VCol>
+                      <VPlayer :src="pregunta.urlVideo"></VPlayer>
+                    </VCol>
+                  </VRow>
+                  <VRow>
+                    <VCol>
+                      <VCardTitle>Respuestas correctas</VCardTitle>
+                    </VCol>
+                  </VRow>
+                  <VRow>
+                    <VCol
+                      v-for="respuesta in pregunta.option"
+                      :key="respuesta.index"
+                    >
+                      <VTextField
+                        readonly=""
+                        v-model="respuesta.answerOption"
+                      ></VTextField>
+                    </VCol>
+                  </VRow>
+                </VExpansionPanelText>
+              </VExpansionPanel>
             </VExpansionPanels>
             <div v-show="loading">
               <center>
@@ -77,7 +207,7 @@
     </VContainer>
   </div>
   <div class="text-xs-center">
-    <VDialog v-model="newContent" persistent="true" width="1000">
+    <VDialog v-model="newContent" persistent width="1000">
       <VCard>
         <center>
           <VCard color="primary">
@@ -112,7 +242,7 @@
           </VRow>
         </VCardText>
         <VCardText class="d-flex justify-center">
-          <VBtn variant="elevated" class="me-3" @click="saveContent()">
+          <VBtn variant="elevated" class="me-3" @click="createNewContent()">
             Guardar
           </VBtn>
           <VBtn
@@ -128,7 +258,7 @@
     </VDialog>
   </div>
   <div class="text-xs-center">
-    <VDialog v-model="editContent" persistent="true" width="1000">
+    <VDialog v-model="editContent" persistent width="1000">
       <VCard>
         <center>
           <VCard color="primary">
@@ -162,45 +292,64 @@
               ></VTextarea>
             </VCol>
           </VRow>
-          <VRow v-for="topic in currentEditing.topic" :key="topic.id">
-            <VCol md="9">
-              <VImg
-                :src="topic.urlImageTopic"
-                style="width: max-contents;"
-              ></VImg>
-            </VCol>
-            <VCol style="padding-top: 20%;">
-              <VBtn color="red" @click="deleteTopic(topic.idTopic)">
-                Eliminar imagen
-              </VBtn>
-            </VCol>
-          </VRow>
-          <VBtn color="primary" width="100%" @click="addImage()">
+          <VDivider></VDivider>
+          <br />
+          <center>
+            <VRow v-for="topic in currentEditing.topic" :key="topic.id">
+              <VCol md="10" style="text-align: right;">
+                <center>
+                  <VImg :src="topic.urlImageTopic" style="width: 70%;"></VImg>
+                </center>
+              </VCol>
+              <VCol style="margin-top: 20%; text-align: left;">
+                <VBtn color="red" @click="deleteTopic(topic.idTopic)">
+                  <VIcon>mdi-delete</VIcon>
+                </VBtn>
+              </VCol>
+              <br />
+              <VDivider></VDivider>
+            </VRow>
+          </center>
+          <br />
+          <VBtn color="primary" width="100%" @click="addImageTopic()">
             Agregar imagen
           </VBtn>
           <br />
         </VCardText>
         <br />
 
-        <VCardActions style="margin-left: 72%;">
-          <br />
+        <VCardActions>
+          <VRow>
+            <VCol cols="2">
+              <VBtn variant="elevated" color="red" @click="deleteContent()">
+                Eliminar
+                <VIcon>mdi-delete</VIcon>
+              </VBtn>
+            </VCol>
 
-          <VBtn
-            variant="elevated"
-            color="success"
-            class="me-3"
-            @click="saveEdit()"
-          >
-            Guardar
-          </VBtn>
-          <VBtn
-            variant="elevated"
-            color="red"
-            class="me-3"
-            @click="closeContent()"
-          >
-            Cancelar
-          </VBtn>
+            <VCol offset="6" style="margin-right: 0px; padding-right: 0px;">
+              <VBtn
+                variant="elevated"
+                color="success"
+                class="me-3"
+                @click="saveEdit()"
+              >
+                Guardar
+                <VIcon>mdi-content-save</VIcon>
+              </VBtn>
+
+              <VBtn
+                variant="elevated"
+                color="red"
+                class="me-3"
+                @click="closeContent()"
+              >
+                Cancelar
+                <VIcon>mdi-close</VIcon>
+              </VBtn>
+            </VCol>
+          </VRow>
+          <br />
         </VCardActions>
       </VCard>
     </VDialog>
@@ -210,7 +359,76 @@
       accept=".jpg, .jpeg, .png"
       state="Boolean(file)"
       label="Añadir anexos..."
-      @change="uploadImage"
+      @change="uploadImageContent"
+    ></VFileInput>
+  </div>
+  <div class="text-xs-center">
+    <VDialog v-model="editQuestionModal" persistent="true" width="1000">
+      <VCard>
+        <center>
+          <VCard color="primary">
+            <VCardTitle style="color: white;" color="primary" class="headline">
+              Editar contenido
+            </VCardTitle>
+          </VCard>
+        </center>
+        <VCardText>
+          <VRow>
+            <VCol md="2">
+              <VCardTitle><b>Titulo:</b></VCardTitle>
+            </VCol>
+            <VCol>
+              <VTextField
+                v-model="currentEditing.titleQuestion"
+                label="Titulo"
+                required
+              ></VTextField>
+            </VCol>
+          </VRow>
+          <VRow v-if="currentEditing.urlImage">
+            <VCol md="9">
+              <VImg
+                :src="currentEditing.urlImage"
+                style="width: max-contents;"
+              ></VImg>
+            </VCol>
+            <VCol style="padding-top: 20%;">
+              <VBtn color="red" @click="deleteImageQuestion(currentEditing.id)">
+                Eliminar imagen
+              </VBtn>
+            </VCol>
+          </VRow>
+          <VRow>
+            <VCol
+              v-for="option in currentEditing.option"
+              :key="option.idOption"
+            >
+              <VTextField
+                v-model="option.answerOption"
+                label="Respuesta"
+                required
+              ></VTextField>
+            </VCol>
+          </VRow>
+          <VBtn
+            v-if="!currentEditing.urlImage"
+            color="primary"
+            width="100%"
+            @click="addImageTopic()"
+          >
+            Agregar imagen
+          </VBtn>
+          <br />
+        </VCardText>
+      </VCard>
+    </VDialog>
+    <VFileInput
+      ref="fileQuestion"
+      v-show="false"
+      accept=".jpg, .jpeg, .png"
+      state="Boolean(file)"
+      label="Añadir anexos..."
+      @change="uploadImageContent"
     ></VFileInput>
   </div>
 </template>
@@ -233,6 +451,7 @@ import {
   setDoc,
   addDoc,
   deleteDoc,
+  updateDoc,
 } from 'firebase/firestore/lite'
 import { load } from 'webfontloader'
 
@@ -250,7 +469,34 @@ export default {
       topic: [],
     }
     let editContent = false
+    let editQuestionModal = false
     let currentEditing: any
+    let questions: any = []
+    let tiposPreguntas: any = [
+      {
+        name: 'Intervalo 1',
+        value: '(1)interval',
+      },
+      {
+        name: 'Intervalo 2',
+        value: '(2)interval',
+      },
+      {
+        name: 'Dominio y rango',
+        value: 'domran',
+      },
+      {
+        name: 'Diagrama de Venn',
+        value: 'venn',
+      },
+      {
+        name: 'Trivia',
+        value: 'trivia',
+      },
+    ]
+    let newQuestion = false
+    let editarTitulo = false
+    let editTituloText: any = ''
     return {
       unitInfo,
       panel,
@@ -260,6 +506,12 @@ export default {
       newTema,
       currentEditing,
       editContent,
+      questions,
+      tiposPreguntas,
+      editQuestionModal,
+      newQuestion,
+      editarTitulo,
+      editTituloText,
     }
   },
   methods: {
@@ -281,13 +533,20 @@ export default {
         orderBy('idSubject', 'asc'),
         //orderBy('unidad'),
       )
+      const questionQuery = query(
+        collection(db, 'contenido', id.toString(), 'preguntas'),
+        orderBy('idQuestion', 'asc'),
+        //orderBy('unidad'),
+      )
       let index = 0
 
       //order by id
       let unitContent = await getDocs(unitQuery)
       let temas: any = []
+      let questionContent = await getDocs(questionQuery)
+      let questions: any = []
 
-      for(let i = 0; i < unitContent.docs.length; i++){
+      for (let i = 0; i < unitContent.docs.length; i++) {
         let docTemas = unitContent.docs[i]
         let topicQuery = query(
           collection(
@@ -300,12 +559,11 @@ export default {
           ),
         )
         let topicContent = await getDocs(topicQuery)
-        console.log(topicContent.docs)
         temas.push(docTemas.data())
         temas[index].topic = []
         temas[index].id = docTemas.id
 
-        for(let j = 0; j < topicContent.docs.length; j++){
+        for (let j = 0; j < topicContent.docs.length; j++) {
           let docTopic = topicContent.docs[j]
           temas[index].topic.push(docTopic.data())
           temas[index].topic[temas[index].topic.length - 1].idTopic =
@@ -313,65 +571,117 @@ export default {
         }
         index++
       }
-      unitContent.forEach(async (docTemas) => {
-        let topicQuery = query(
+
+      index = 0
+      for (let i = 0; i < questionContent.docs.length; i++) {
+        let docQuestions = questionContent.docs[i]
+        let QuestionQuery = query(
           collection(
             db,
             'contenido',
             id.toString(),
-            'temas',
-            docTemas.id,
-            'topic',
+            'preguntas',
+            docQuestions.id,
+            'option',
           ),
-          orderBy('idSubject', 'asc'),
         )
-        let topicContent = await getDocs(topicQuery)
+        let optionContent = await getDocs(QuestionQuery)
+        questions.push(docQuestions.data())
+        questions[index].option = []
+        questions[index].id = docQuestions.id
+        //urlImageOrVideoQuestion="[image]https://res.cloudinary.com/dsuh0d4g5/image/upload/v1687971456/DocIDImage/a74c5f28-346b-4b78-bd6d-0be80bcdad07_dov2at.jpg"
+        //get if image or video
+        if (questions[index].urlImageOrVideoQuestion) {
+          if (questions[index].urlImageOrVideoQuestion.includes('[image]')) {
+            let url = questions[index].urlImageOrVideoQuestion.split(']')[1]
+            questions[index].urlImage = url
+          }
+          if (questions[index].urlImageOrVideoQuestion.includes('[video]')) {
+            let url = questions[index].urlImageOrVideoQuestion.split(']')[1]
+            questions[index].urlVideo = url
+          }
+        }
 
-        temas.push(docTemas.data())
-        temas[index].id = docTemas.id
-        temas[index].topic = []
+        for (let j = 0; j < optionContent.docs.length; j++) {
+          let docOption = optionContent.docs[j]
+          questions[index].option.push(docOption.data())
+          //search titleQuestion in tiposPreguntas and add value as name
+          this.tiposPreguntas.forEach((tipo: any) => {
+            if (tipo.value == questions[index].idQuestion) {
+              questions[index].nameQuestion = tipo.name
+            }
+          })
 
-        await topicContent.forEach(async (docTopic) => {
-          temas[index].topic.push(docTopic.data())
-          temas[index].topic[temas[index].topic.length - 1].idTopic =
-            docTopic.id
-        })
+          questions[index].option[questions[index].option.length - 1].idOption =
+            docOption.id
+        }
+
         index++
-      })
-      console.log(index, '2')
+      }
+      this.editTituloText = this.unitInfo.descriptionUnitBook
+      console.log('Questions: ', questions)
+
       //order temas by idSubject
       await temas.sort((a: any, b: any) => {
         return a.idSubject - b.idSubject
       })
+      this.questions = questions
       this.unidades = temas
       this.loading = false
+      console.log(this.unidades)
     },
     closeContent() {
       this.editContent = false
       this.newContent = false
+      this.editQuestionModal = false
     },
-    async saveContent() {
-      let toast2 = toast.loading(
-        'Actualizando la información, espere un segundo',
-        {
-          //autoClose: false,
-        },
-      )
+    async createNewContent() {
+      let toast2 = toast.loading('Agregando el nuevo contenido', {
+        //autoClose: false,
+      })
 
       console.log(this.newTema)
       let id = this.$route.params.id
-      let idSubject = this.unidades.length + 1
+      //search last idSubject in unidades and add 1, idSubject are not incremental
+      let idSubject = this.unidades[this.unidades.length - 1].idSubject + 1
       const db = getFirestore()
 
-      toast.update(toast2, {
-        render: 'Contenido agregado con éxito',
-        type: 'success',
-        autoClose: 2000,
-        isLoading: false,
-        closeOnClick: true,
-      })
-      //reload page
-      this.getData()
+      try {
+        let docId = await addDoc(
+          collection(db, 'contenido', id.toString(), 'temas'),
+          {
+            descriptionSubject: this.newTema.descriptionSubject,
+            idSubject: idSubject,
+            titleSubject: this.newTema.titleSubject,
+          },
+        )
+        console.log(docId.id)
+        this.unidades.push({
+          descriptionSubject: this.newTema.descriptionSubject,
+          idSubject: idSubject,
+          titleSubject: this.newTema.titleSubject,
+          topic: [],
+          id: docId.id,
+        })
+        toast.update(toast2, {
+          render: 'Contenido agregado con éxito',
+          type: 'success',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+        this.newContent = false
+        this.newTema = {
+          descriptionSubject: '',
+          titleSubject: '',
+          idSubject: 0,
+          topic: [],
+        }
+        //reload page
+      } catch (error) {
+        console.log('ERROR AL SUBIR')
+        toast.error('Hubo un error, intentalo mas tarde')
+      }
     },
     async saveEdit() {
       let toast2 = toast.loading(
@@ -383,15 +693,33 @@ export default {
       console.log(this.currentEditing)
       let id = this.$route.params.id
       const db = getFirestore()
-      toast.update(toast2, {
-        render: 'Contenido agregado con éxito',
-        type: 'success',
-        autoClose: 2000,
-        isLoading: false,
-        closeOnClick: true,
-      })
-      //reload page
-      this.getData()
+      try {
+        await updateDoc(
+          doc(db, 'contenido', id.toString(), 'temas', this.currentEditing.id),
+          {
+            descriptionSubject: this.currentEditing.descriptionSubject,
+            idSubject: this.currentEditing.idSubject,
+            titleSubject: this.currentEditing.titleSubject,
+          },
+        )
+        toast.update(toast2, {
+          render: 'Contenido agregado con éxito',
+          type: 'success',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+        let index = this.unidades.findIndex(
+          (tema: any) => tema.id == this.currentEditing.id,
+        )
+        this.unidades[index] = this.currentEditing
+        //reload page
+        this.getData()
+        this.closeContent()
+      } catch (error) {
+        console.log('ERROR AL SUBIR')
+        toast.error('Error al subir la imagen')
+      }
     },
     async deleteTopic(id: any) {
       console.log(id)
@@ -405,6 +733,7 @@ export default {
       let idBook = this.$route.params.id
       const db = getFirestore()
       try {
+        console.log('BORRAR IMAGEN')
         await deleteDoc(
           doc(
             db,
@@ -416,6 +745,10 @@ export default {
             id,
           ),
         )
+        this.currentEditing.topic = this.currentEditing.topic.filter(
+          (topic: any) => topic.idTopic != id,
+        )
+
         toast.update(toast2, {
           render: 'Imagen eliminada con exito',
           type: 'success',
@@ -423,11 +756,6 @@ export default {
           isLoading: false,
           closeOnClick: true,
         })
-        this.currentEditing.topic = this.currentEditing.topic.filter(
-          (topic: any) => topic.idTopic != id,
-        )
-
-        this.getData()
       } catch (error) {
         toast.update(toast2, {
           render: 'Error al eliminar la imagen',
@@ -438,19 +766,24 @@ export default {
         })
       }
     },
-
     async editTopic(tema: any) {
       console.log(tema)
       this.editContent = true
       this.currentEditing = tema
     },
-    async addImage() {
+    editQuestion(pregunta: any) {
+      console.log(pregunta)
+      this.currentEditing = pregunta
+      this.editQuestionModal = true
+    },
+    async addImageTopic() {
       let fileInputElement: any = this.$refs.file
       fileInputElement.click()
     },
-    async uploadImage(e: any) {
+    async uploadImageContent(e: any) {
       const image = e.target.files ? e.target.files[0] : null
       if (image) {
+        console.log('AÑADIR IMAGEN')
         const formData = new FormData()
         formData.append('file', image)
         formData.append('upload_preset', 'hsvfa23f')
@@ -464,14 +797,127 @@ export default {
               )
               let id = this.$route.params.id
               const db = getFirestore()
-              this.unidades.forEach((tema: any) => {
-                if (tema.id == this.currentEditing.id) {
-                  tema.topic.push({
+              try {
+                let docId = await addDoc(
+                  collection(
+                    db,
+                    'contenido',
+                    id.toString(),
+                    'temas',
+                    this.currentEditing.id,
+                    'topic',
+                  ),
+                  {
                     urlImageTopic: res.data.secure_url,
                     idTopic: this.currentEditing.topic.length + 1,
-                  })
-                }
-              })
+                  },
+                )
+                console.log(docId.id)
+                toast.update(toast2, {
+                  render: 'Imagen agregada con exito',
+                  type: 'success',
+                  autoClose: 2000,
+                  isLoading: false,
+                  closeOnClick: true,
+                })
+                //search id in unidades and add topic
+                let index = this.unidades.findIndex(
+                  (tema: any) => tema.id == this.currentEditing.id,
+                )
+                this.unidades[index].topic.push({
+                  urlImageTopic: res.data.secure_url,
+                  idTopic: docId.id,
+                })
+                console.log(this.unidades)
+              } catch (error) {
+                console.log('ERROR AL SUBIR')
+                console.log(error)
+                toast.error('Error al subir la imagen')
+              }
+            })
+        } catch (error) {
+          console.log('ERROR AL SUBIR')
+          toast.error('Error al subir la imagen')
+        }
+      }
+    },
+    async deleteImageQuestion(id: any) {
+      //delete only urlImageorVideoQuestion from preguntas/id
+      console.log(id)
+      let toast2 = toast.loading(
+        'Actualizando la información, espere un segundo',
+        {
+          //autoClose: false,
+        },
+      )
+      console.log(this.currentEditing)
+      let idBook = this.$route.params.id
+      const db = getFirestore()
+      try {
+        console.log('BORRAR IMAGEN')
+        await setDoc(doc(db, 'contenido', idBook.toString(), 'preguntas', id), {
+          feedBackQuestion: this.currentEditing.feedBackQuestion,
+          idQuestion: this.currentEditing.idQuestion,
+          titleQuestion: this.currentEditing.titleQuestion,
+          urlImageOrVideoQuestion: '',
+        }).then(() => {
+          toast.update(toast2, {
+            render: 'Imagen eliminada con exito',
+            type: 'success',
+            autoClose: 2000,
+            isLoading: false,
+            closeOnClick: true,
+          })
+          this.currentEditing.urlImage = ''
+        })
+      } catch (error) {
+        toast.update(toast2, {
+          render: 'Error al eliminar la imagen',
+          type: 'error',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+      }
+    },
+    async addImageQuestion() {
+      let fileInputElement: any = this.$refs.fileQuestion
+      fileInputElement.click()
+    },
+    async uploadImageQuestion(e: any) {
+      const image = e.target.files ? e.target.files[0] : null
+      if (image) {
+        console.log('AÑADIR IMAGEN')
+        const formData = new FormData()
+        formData.append('file', image)
+        formData.append('upload_preset', 'hsvfa23f')
+
+        await axios
+          .post('https://api.cloudinary.com/v1_1/dmx1v3oeu/upload', formData)
+          .then(async (res: any) => {
+            console.log(res.data)
+            let toast2 = toast.loading(
+              'Actualizando la información, espere un segundo',
+            )
+            let id = this.$route.params.id
+            const db = getFirestore()
+            console.log('ADD')
+            try {
+              await setDoc(
+                doc(
+                  db,
+                  'contenido',
+                  id.toString(),
+                  'preguntas',
+                  this.currentEditing.id,
+                ),
+                {
+                  feedBackQuestion: this.currentEditing.feedBackQuestion,
+                  idQuestion: this.currentEditing.idQuestion,
+                  titleQuestion: this.currentEditing.titleQuestion,
+                  urlImageOrVideoQuestion: '[image]' + res.data.secure_url,
+                },
+              )
               toast.update(toast2, {
                 render: 'Imagen agregada con exito',
                 type: 'success',
@@ -479,12 +925,65 @@ export default {
                 isLoading: false,
                 closeOnClick: true,
               })
-              //reload page
-              this.getData()
-            })
-        } catch (error) {
-          console.log(error)
-        }
+            } catch (error) {
+              console.log('ERROR AL SUBIR')
+              toast.error('Error al subir la imagen')
+            }
+          })
+      }
+    },
+    async cambiarTitulo() {
+      let toast2 = toast.loading(
+        'Actualizando la información, espere un segundo',
+      )
+      let id = this.$route.params.id
+      const db = getFirestore()
+      try {
+        await updateDoc(doc(db, 'contenido', id.toString()), {
+          descriptionUnitBook: this.editTituloText,
+        })
+        toast.update(toast2, {
+          render: 'Titulo actualizado con exito',
+          type: 'success',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+        this.editarTitulo = false
+        this.unitInfo.descriptionUnitBook = this.editTituloText
+      } catch (error) {
+        console.log('ERROR AL SUBIR')
+        toast.error('Error al actualizar el titulo')
+      }
+    },
+    cancelarCambiarTitulo() {
+      this.editarTitulo = false
+      this.editTituloText = this.unitInfo.descriptionUnitBook
+    },
+    async deleteContent() {
+      let toast2 = toast.loading(
+        'Actualizando la información, espere un segundo',
+      )
+      let id = this.$route.params.id
+      const db = getFirestore()
+      let contentID = this.currentEditing.id
+      try {
+        await deleteDoc(doc(db, 'contenido', id.toString(), 'temas', contentID))
+        toast.update(toast2, {
+          render: 'Contenido eliminado con exito',
+          type: 'success',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+        let index = this.unidades.findIndex(
+          (tema: any) => tema.id == this.currentEditing.id,
+        )
+        this.unidades.splice(index, 1)
+        this.closeContent()
+      } catch (error) {
+        console.log('ERROR AL SUBIR')
+        toast.error('Error al eliminar el contenido')
       }
     },
   },
