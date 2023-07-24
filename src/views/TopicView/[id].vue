@@ -19,7 +19,19 @@
                 white-space: pre-wrap;
               "
             >
-              <h1>{{ unitInfo.titleUnitBook }}</h1>
+              <VRow>
+                <VCol md="2">
+                  <RouterLink to="/dashboard">
+                    <VBtn color="primary" >
+                      <VIcon>mdi-arrow-left</VIcon>
+                      Regresar
+                    </VBtn>
+                  </RouterLink>
+                </VCol>
+                <VCol style="margin-right: 25%;">
+                  <h1>{{ unitInfo.titleUnitBook }}</h1>
+                </VCol>
+              </VRow>
             </VCardTitle>
             <VCardText v-if="!editarTitulo">
               <VRow>
@@ -105,7 +117,9 @@
                   </div>
                 </VExpansionPanelText>
               </VExpansionPanel>
-              <br />
+             
+            </VExpansionPanels>
+            <br />
               <span style="padding-top: 5%; padding-bottom: 5%;">
                 <VBtn
                   elevation="outlined"
@@ -116,7 +130,6 @@
                 </VBtn>
               </span>
               <br />
-            </VExpansionPanels>
             <center v-if="unidades.length > 0">
               <VCard color="primary">
                 <VCardTitle
@@ -168,15 +181,64 @@
                       <VCardTitle>Respuestas correctas</VCardTitle>
                     </VCol>
                   </VRow>
-                  <VRow>
+                  <VRow
+                    v-if="
+                      pregunta.idQuestion == '(1)interval' ||
+                      pregunta.idQuestion == '(2)interval'
+                    "
+                  >
+                    <VCol>
+                      <VSelect
+                        readonly
+                        :items="closedOpenLeft"
+                        item-title="name"
+                        item-value="value"
+                        v-model="pregunta.option[0].answerOption"
+                      ></VSelect>
+                    </VCol>
+                    <VCol>
+                      <VTextField
+                        readonly
+                        type="number"
+                        v-model="pregunta.option[2].answerOption"
+                      ></VTextField>
+                    </VCol>
+                    <VCol>
+                      <VTextField
+                        readonly
+                        type="number"
+                        v-model="pregunta.option[3].answerOption"
+                      ></VTextField>
+                    </VCol>
+                    <VCol>
+                      <VSelect
+                        readonly
+                        :items="closedOpenRight"
+                        item-title="name"
+                        item-value="value"
+                        v-model="pregunta.option[1].answerOption"
+                      ></VSelect>
+                    </VCol>
+                  </VRow>
+                  <VRow v-else>
                     <VCol
                       v-for="respuesta in pregunta.option"
-                      :key="respuesta.index"
+                      :key="respuesta.id"
                     >
                       <VTextField
                         readonly
                         v-model="respuesta.answerOption"
                       ></VTextField>
+                    </VCol>
+                  </VRow>
+                  <VRow>
+                    <VCol>
+                      <VCardTitle>Retroalimentación</VCardTitle>
+                    </VCol>
+                  </VRow>
+                  <VRow>
+                    <VCol>
+                      <p>{{ pregunta.feedBackQuestion }}</p>
                     </VCol>
                   </VRow>
                 </VExpansionPanelText>
@@ -389,7 +451,7 @@
                 <VImg :src="currentEditing.urlImage" style="width: 70%;"></VImg>
               </center>
             </VCol>
-            <VCol style="margin-top: 20%; text-align: left;">
+            <VCol style="margin-top: 10%; text-align: left;">
               <VBtn color="red" @click="deleteImageQuestion(currentEditing.id)">
                 <VIcon>mdi-delete</VIcon>
               </VBtn>
@@ -404,7 +466,12 @@
             Agregar imagen
           </VBtn>
           <VCardTitle style="padding-top: 5%;"><b>Respuestas:</b></VCardTitle>
-          <VRow>
+          <VRow
+            v-if="
+              currentEditing.idQuestion == '(1)interval' ||
+              currentEditing.idQuestion == '(2)interval'
+            "
+          >
             <VCol>
               <VSelect
                 :items="closedOpenLeft"
@@ -416,13 +483,13 @@
             <VCol>
               <VTextField
                 type="number"
-                v-model="currentEditing.option[1].answerOption"
+                v-model="currentEditing.option[2].answerOption"
               ></VTextField>
             </VCol>
             <VCol>
               <VTextField
                 type="number"
-                v-model="currentEditing.option[2].answerOption"
+                v-model="currentEditing.option[3].answerOption"
               ></VTextField>
             </VCol>
             <VCol>
@@ -430,8 +497,16 @@
                 :items="closedOpenRight"
                 item-title="name"
                 item-value="value"
-                v-model="currentEditing.option[3].answerOption"
+                v-model="currentEditing.option[1].answerOption"
               ></VSelect>
+            </VCol>
+          </VRow>
+          <VRow v-else>
+            <VCol
+              v-for="respuesta in currentEditing.option"
+              :key="respuesta.id"
+            >
+              <VTextField v-model="respuesta.answerOption"></VTextField>
             </VCol>
           </VRow>
           <VRow>
@@ -452,14 +527,19 @@
         <VCardActions>
           <VRow>
             <VCol cols="2">
-              <VBtn variant="elevated" color="red" @click="">
+              <VBtn variant="elevated" color="red" @click="closeContent">
                 Eliminar
                 <VIcon>mdi-delete</VIcon>
               </VBtn>
             </VCol>
 
             <VCol offset="6" style="margin-right: 0px; padding-right: 0px;">
-              <VBtn variant="elevated" color="success" class="me-3" @click="">
+              <VBtn
+                variant="elevated"
+                color="success"
+                class="me-3"
+                @click="saveEditQuestion"
+              >
                 Guardar
                 <VIcon>mdi-content-save</VIcon>
               </VBtn>
@@ -651,6 +731,7 @@ export default {
             docQuestions.id,
             'option',
           ),
+          orderBy('idOption', 'asc'),
         )
         let optionContent = await getDocs(QuestionQuery)
         questions.push(docQuestions.data())
@@ -679,7 +760,7 @@ export default {
             }
           })
 
-          questions[index].option[questions[index].option.length - 1].idOption =
+          questions[index].option[questions[index].option.length - 1].id =
             docOption.id
         }
 
@@ -788,6 +869,65 @@ export default {
         toast.error('Error al subir la imagen')
       }
     },
+    async saveEditQuestion() {
+      let toast2 = toast.loading(
+        'Actualizando la información, espere un segundo',
+        {
+          //autoClose: false,
+        },
+      )
+      console.log(this.currentEditing)
+      let id = this.$route.params.id
+      const db = getFirestore()
+      try {
+        await updateDoc(
+          doc(
+            db,
+            'contenido',
+            id.toString(),
+            'preguntas',
+            this.currentEditing.id,
+          ),
+          {
+            titleQuestion: this.currentEditing.titleQuestion,
+            feedBackQuestion: this.currentEditing.feedBackQuestion,
+          },
+        )
+        for (let i = 0; i < this.currentEditing.option.length; i++) {
+          await updateDoc(
+            doc(
+              db,
+              'contenido',
+              id.toString(),
+              'preguntas',
+              this.currentEditing.id,
+              'option',
+              this.currentEditing.option[i].id,
+            ),
+            {
+              answerOption: this.currentEditing.option[i].answerOption,
+            },
+          )
+        }
+        toast.update(toast2, {
+          render: 'Contenido agregado con éxito',
+          type: 'success',
+          autoClose: 2000,
+          isLoading: false,
+          closeOnClick: true,
+        })
+        let index = this.questions.findIndex(
+          (pregunta: any) => pregunta.id == this.currentEditing.id,
+        )
+        this.questions[index] = this.currentEditing
+        //reload page
+        this.getData()
+        this.closeContent()
+      } catch (error) {
+        console.log('ERROR AL SUBIR')
+        toast.error('Error al subir la imagen')
+      }
+    },
     async deleteTopic(id: any) {
       console.log(id)
       let toast2 = toast.loading(
@@ -836,11 +976,11 @@ export default {
     async editTopic(tema: any) {
       console.log(tema)
       this.editContent = true
-      this.currentEditing = tema
+      this.currentEditing = Object.assign({}, tema)
     },
     editQuestion(pregunta: any) {
       console.log(pregunta)
-      this.currentEditing = pregunta
+      this.currentEditing = Object.assign({}, pregunta)
       this.editQuestionModal = true
     },
     async addImageTopic() {
@@ -1002,6 +1142,7 @@ export default {
                 (pregunta: any) => pregunta.id == this.currentEditing.id,
               )
               this.questions[index].urlImage = res.data.secure_url
+              this.currentEditing.urlImage = res.data.secure_url
             } catch (error) {
               console.log('ERROR AL SUBIR')
               console.log(error)
