@@ -1,11 +1,11 @@
 <template>
   <div>
-    <VContainer :fluid="true" style="padding-top: 3%;">
+    <VContainer :fluid="true" style="padding-top: 5%;">
       <VRow>
         <VCol>
           <div v-for="item in unidades" :key="item.id">
             <VCard
-              width="50%"
+              width="80%"
               outlined="true"
               @click="verUnidad(item)"
               style="text-align: center;"
@@ -14,7 +14,7 @@
               <VContainer>
                 <VRow>
                   <VCol md="4">
-                    <VImg :src="item.urlMainImage" width="100%" />
+                    <VImg :src="item.urlMainImage" width="50%" />
                   </VCol>
                   <VCol align-self="center">
                     <h2>{{ item.titleUnitBook }}</h2>

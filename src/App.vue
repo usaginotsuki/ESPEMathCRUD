@@ -2,11 +2,11 @@
   <div class="background"></div>
   <div class="navbar">
     <nav class="nav">
-      <div class="nav-el" id="name_project">
-        <img src="./assets/logo.png" width="30" class="me-2" alt="" />
+      <div class="nav-el" id="name_project" style="vertical-align: middle;">
+        <img src="./assets/logo.png" width="60" class="me-2" alt="" />
         ESPEMath
       </div>
-      
+
       <div class="nav-el"></div>
     </nav>
   </div>

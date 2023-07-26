@@ -22,7 +22,7 @@
               <VRow>
                 <VCol md="2">
                   <RouterLink to="/dashboard">
-                    <VBtn color="primary" >
+                    <VBtn color="primary">
                       <VIcon>mdi-arrow-left</VIcon>
                       Regresar
                     </VBtn>
@@ -38,7 +38,7 @@
                 <VCol md="10">
                   <h3>{{ unitInfo.descriptionUnitBook }}</h3>
                 </VCol>
-                <VCol>
+                <VCol md="2">
                   <VBtn
                     color="primary"
                     @click="editarTitulo = true"
@@ -117,19 +117,19 @@
                   </div>
                 </VExpansionPanelText>
               </VExpansionPanel>
-             
             </VExpansionPanels>
             <br />
-              <span style="padding-top: 5%; padding-bottom: 5%;">
-                <VBtn
-                  elevation="outlined"
-                  color="green"
-                  @click="newContent = true"
-                >
-                  Agregar nuevo contenido
-                </VBtn>
-              </span>
-              <br />
+            <span style="padding-top: 5%; padding-bottom: 5%;">
+              <VBtn
+                elevation="outlined"
+                color="green"
+                @click="newContent = true"
+              >
+                Agregar nuevo contenido
+              </VBtn>
+            </span>
+            <br />
+            <br />
             <center v-if="unidades.length > 0">
               <VCard color="primary">
                 <VCardTitle
@@ -243,6 +243,18 @@
                   </VRow>
                 </VExpansionPanelText>
               </VExpansionPanel>
+              <br />
+              <span style="padding-top: 5%; padding-bottom: 5%;">
+                <VBtn
+                  elevation="outlined"
+                  color="green"
+                  @click="newQuestion = true"
+                >
+                  Agregar nueva pregunta
+                </VBtn>
+              </span>
+              <br />
+              <br />
             </VExpansionPanels>
             <div v-show="loading">
               <center>
@@ -281,7 +293,7 @@
             <VCol md="2">
               <VCardTitle><b>Titulo:</b></VCardTitle>
             </VCol>
-            <VCol md="6">
+            <VCol>
               <VTextField
                 v-model="newTema.titleSubject"
                 label="Titulo"
@@ -290,7 +302,7 @@
             </VCol>
           </VRow>
           <VRow>
-            <VCol>
+            <VCol md="2">
               <VCardTitle><b>Contenido:</b></VCardTitle>
             </VCol>
             <VCol>
@@ -424,6 +436,152 @@
   </div>
   <div class="text-xs-center">
     <VDialog v-model="editQuestionModal" persistent width="1000">
+      <VCard>
+        <center>
+          <VCard color="primary">
+            <VCardTitle style="color: white;" color="primary" class="headline">
+              Editar pregunta
+            </VCardTitle>
+          </VCard>
+        </center>
+        <VCardText>
+          <VRow>
+            <VCol md="3">
+              <VCardTitle><b>Titulo:</b></VCardTitle>
+            </VCol>
+            <VCol>
+              <VTextField
+                v-model="currentEditing.titleQuestion"
+                label="Titulo"
+                required
+              ></VTextField>
+            </VCol>
+          </VRow>
+          <VRow v-if="currentEditing.urlImage">
+            <VCol md="10" style="text-align: right;">
+              <center>
+                <VImg :src="currentEditing.urlImage" style="width: 70%;"></VImg>
+              </center>
+            </VCol>
+            <VCol style="margin-top: 10%; text-align: left;">
+              <VBtn color="red" @click="deleteImageQuestion(currentEditing.id)">
+                <VIcon>mdi-delete</VIcon>
+              </VBtn>
+            </VCol>
+          </VRow>
+          <VBtn
+            v-if="!currentEditing.urlImage"
+            color="primary"
+            width="100%"
+            @click="addImageQuestion()"
+          >
+            Agregar imagen
+          </VBtn>
+          <VCardTitle style="padding-top: 5%;"><b>Respuestas:</b></VCardTitle>
+          <VRow
+            v-if="
+              currentEditing.idQuestion == '(1)interval' ||
+              currentEditing.idQuestion == '(2)interval'
+            "
+          >
+            <VCol>
+              <VSelect
+                :items="closedOpenLeft"
+                item-title="name"
+                item-value="value"
+                v-model="currentEditing.option[0].answerOption"
+              ></VSelect>
+            </VCol>
+            <VCol>
+              <VTextField
+                type="number"
+                v-model="currentEditing.option[2].answerOption"
+              ></VTextField>
+            </VCol>
+            <VCol>
+              <VTextField
+                type="number"
+                v-model="currentEditing.option[3].answerOption"
+              ></VTextField>
+            </VCol>
+            <VCol>
+              <VSelect
+                :items="closedOpenRight"
+                item-title="name"
+                item-value="value"
+                v-model="currentEditing.option[1].answerOption"
+              ></VSelect>
+            </VCol>
+          </VRow>
+          <VRow v-else>
+            <VCol
+              v-for="respuesta in currentEditing.option"
+              :key="respuesta.id"
+            >
+              <VTextField v-model="respuesta.answerOption"></VTextField>
+            </VCol>
+          </VRow>
+          <VRow>
+            <VCol md="3">
+              <VCardTitle><b>Retroalimentación:</b></VCardTitle>
+            </VCol>
+            <VCol>
+              <VTextarea
+                v-model="currentEditing.feedBackQuestion"
+                label="Titulo"
+                required
+              ></VTextarea>
+            </VCol>
+          </VRow>
+
+          <br />
+        </VCardText>
+        <VCardActions>
+          <VRow>
+            <VCol cols="2">
+              <VBtn variant="elevated" color="red" @click="closeContent">
+                Eliminar
+                <VIcon>mdi-delete</VIcon>
+              </VBtn>
+            </VCol>
+
+            <VCol offset="6" style="margin-right: 0px; padding-right: 0px;">
+              <VBtn
+                variant="elevated"
+                color="success"
+                class="me-3"
+                @click="saveEditQuestion"
+              >
+                Guardar
+                <VIcon>mdi-content-save</VIcon>
+              </VBtn>
+
+              <VBtn
+                variant="elevated"
+                color="red"
+                class="me-3"
+                @click="closeContent()"
+              >
+                Cancelar
+                <VIcon>mdi-close</VIcon>
+              </VBtn>
+            </VCol>
+          </VRow>
+          <br />
+        </VCardActions>
+      </VCard>
+    </VDialog>
+    <VFileInput
+      ref="fileQuestion"
+      v-show="false"
+      accept=".jpg, .jpeg, .png"
+      state="Boolean(file)"
+      label="Añadir anexos..."
+      @change="uploadImageQuestion"
+    ></VFileInput>
+  </div>
+  <div class="text-xs-center">
+    <VDialog v-model="newQuestion" persistent width="1000">
       <VCard>
         <center>
           <VCard color="primary">
@@ -791,7 +949,12 @@ export default {
       console.log(this.newTema)
       let id = this.$route.params.id
       //search last idSubject in unidades and add 1, idSubject are not incremental
-      let idSubject = this.unidades[this.unidades.length - 1].idSubject + 1
+      let idSubject = 1
+      try {
+        let idSubject = this.unidades[this.unidades.length - 1].idSubject + 1
+      } catch (error) {
+        let idSubject = 1
+      }
       const db = getFirestore()
 
       try {
@@ -829,6 +992,7 @@ export default {
       } catch (error) {
         console.log('ERROR AL SUBIR')
         toast.error('Hubo un error, intentalo mas tarde')
+        console.log(error)
       }
     },
     async saveEdit() {
@@ -955,6 +1119,14 @@ export default {
         this.currentEditing.topic = this.currentEditing.topic.filter(
           (topic: any) => topic.idTopic != id,
         )
+        //search id in unidades and delete topic
+        let index = this.unidades.findIndex(
+          (tema: any) => tema.id == this.currentEditing.id,
+        )
+        this.unidades[index].topic = this.unidades[index].topic.filter(
+          (topic: any) => topic.idTopic != id,
+        )
+        console.log(this.unidades)
 
         toast.update(toast2, {
           render: 'Imagen eliminada con exito',
